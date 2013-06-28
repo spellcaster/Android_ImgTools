@@ -16,7 +16,7 @@ BASEDIR=${FULLPATH%/*}
 FULLNAME=${FULLPATH##*/}
 FILENAME=${FULLNAME%.*}
 
-if [ "$BASEDIR" == "$FILENAME" ]; # process the case with empty path
+if [ "$BASEDIR" == "$FULLNAME" ]; # process the case with empty path
 then
   BASEDIR="." 
 fi
@@ -24,22 +24,25 @@ fi
 if [[ "$FILENAME" =~ boot ]];
 then
   FS=ROOTFS
-  DESTDIR=$BASEDIR/$FILENAME
+  DESTDIR=$BASEDIR/${FILENAME}_unp
   DOEXTRACT=1
 elif [[ "$FILENAME" =~ recovery ]];
 then
   FS=RECOVERY
-  DESTDIR=$BASEDIR/$FILENAME
+  DESTDIR=$BASEDIR/${FILENAME}_unp
   DOEXTRACT=1
 elif [[ "$FILENAME" =~ [rR]am ]];
 then
   FS=RECOVERY
-  DESTDIR=$BASEDIR/$FILENAME
+  DESTDIR=$BASEDIR/${FILENAME}_unp
   DOEXTRACT=0
 else
   echo "Usage: ./unpack.sh (*recovery* | *boot* | *ram* | *Ram* )"
   exit 1
 fi
+
+# echo $BASEDIR @@ $FULLNAME @@ $FILENAME
+# exit 0
 
 if [ -d "$DESTDIR" ];
 then
@@ -127,7 +130,7 @@ then
   echo "Extracting ramdisk..."
   dd if="$FULLPATH" of="$DESTDIR/ramdisk" bs=$NUMREC skip=1
 else
-  mv "$FULLPATH" "$DESTDIR/ramdisk"
+  cp "$FULLPATH" "$DESTDIR/ramdisk"
 fi
 
 # For images with header: find where gzip starts
@@ -143,7 +146,7 @@ NUMRAM=$POS
 if [ $NUMRAM -ne 0 ];
 then
   dd if="$DESTDIR/ramdisk" of="$DESTDIR/ram_header" bs=$NUMRAM count=1
-  dd "if=$DESTDIR/ramdisk" bs="$NUMRAM" skip=1 | gunzip > "$DESTDIR/ramdisk_unz"
+  dd if="$DESTDIR/ramdisk" bs="$NUMRAM" skip=1 | gunzip > "$DESTDIR/ramdisk_unz"
 else
   mv "$DESTDIR/ramdisk" "$DESTDIR/ramdisk_unz.gz"
   gunzip "$DESTDIR/ramdisk_unz.gz"
